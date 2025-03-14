@@ -13,36 +13,19 @@ class BM25RetrievalEngine(BaseRetrievalEngine):
     like document metadata management and index persistence.
     """
     
-    def __init__(self, language: str = "english", 
+    def __init__(self, 
                         k1: float = 1.5, 
-                        b: float = 0.75, 
-                        use_stemmer: bool = False, 
-                        use_stopwords: bool = False):
+                        b: float = 0.75):
         """Initialize the BM25 retrieval engine.
         
         Args:
-            language: Language for stemming (default: "english").
             k1: Term frequency saturation parameter (default: 1.5).
             b: Length normalization parameter (default: 0.75).
-            use_stemmer: Whether to use stemming in tokenization (default: False).
-            use_stopwords: Whether to use stopwords in tokenization (default: False).
         """
-        self.language = language
         self.k1 = k1
         self.b = b
         self.retriever = bm25s.BM25(k1=k1, b=b)
         self.document_store = []
-        self.doc_count = 0
-        
-        # Initialize stemmer if enabled and language is supported
-        self.use_stemmer = use_stemmer
-        self.use_stopwords = use_stopwords
-        self.stemmer = None
-        if use_stemmer:
-            try:
-                self.stemmer = Stemmer.Stemmer(language)
-            except Exception:
-                pass
     
     def index_documents(self, documents: List[Dict[str, Any]]) -> bool:
         """Index a list of documents.
@@ -53,24 +36,13 @@ class BM25RetrievalEngine(BaseRetrievalEngine):
         Returns:
             bool: True if indexing was successful.
         """
-        try:
-            # Reset document store
-            self.document_store = []
-            
-            # Store documents for retrieval
-            self.document_store.extend(documents)
-            
-            # Extract content for indexing
-            corpus = [doc['content'] for doc in documents]
-            
+        try:          
+            self.document_store = documents
             # Tokenize corpus
-            corpus_tokens = bm25s.tokenize(corpus, stopwords=self.language if self.use_stopwords else None, stemmer=self.stemmer if self.use_stemmer else None)
+            corpus_tokens = bm25s.tokenize(documents)
             
             # Index the corpus
             self.retriever.index(corpus_tokens)
-            
-            # Update document count
-            self.doc_count = len(self.document_store)
             
             return True
         except Exception as e:
@@ -93,17 +65,12 @@ class BM25RetrievalEngine(BaseRetrievalEngine):
         if not query.strip():
             return [], []
         
-        try:
-            # Adjust top_k if it's larger than corpus size
-            adjusted_top_k = min(top_k, self.doc_count)
-            if adjusted_top_k == 0:
-                return [], []
-                
+        try:                
             # Tokenize query
-            query_tokens = bm25s.tokenize([query], stopwords=self.language if self.use_stopwords else None, stemmer=self.stemmer if self.use_stemmer else None)[0]
+            query_tokens = bm25s.tokenize(query)
             
             # Retrieve results
-            doc_ids, scores = self.retriever.retrieve(query_tokens, k=adjusted_top_k)
+            doc_ids, scores = self.retriever.retrieve(query_tokens, k=top_k)
             
             # Filter by min_score using boolean indexing
             mask = scores >= min_score
@@ -126,17 +93,13 @@ class BM25RetrievalEngine(BaseRetrievalEngine):
             os.makedirs(directory, exist_ok=True)
             
             # Save BM25 index
-            self.retriever.save(directory, corpus=[doc['content'] for doc in self.document_store])
+            self.retriever.save(directory)
             
             # Save additional engine state
             state = {
-                'language': self.language,
                 'k1': self.k1,
                 'b': self.b,
-                'use_stemmer': self.use_stemmer,
-                'use_stopwords': self.use_stopwords,
-                'doc_count': self.doc_count,
-                'document_store': self.document_store
+                'corpus' : self.document_store
             }
             
             with open(os.path.join(directory, 'engine_state.json'), 'w', encoding='utf-8') as f:
@@ -164,19 +127,17 @@ class BM25RetrievalEngine(BaseRetrievalEngine):
             
             # Create new engine instance with saved parameters
             engine = cls(
-                language=state['language'],
                 k1=state['k1'],
                 b=state['b'],
-                use_stemmer=state['use_stemmer'],
-                use_stopwords=state['use_stopwords']
             )
             
-            # Restore document store and count
-            engine.document_store = state['document_store']
-            engine.doc_count = state['doc_count']
-            
             # Load BM25 index
-            engine.retriever = bm25s.BM25.load(directory)
+            engine.retriever = bm25s.BM25.load(directory, load_corpus = True)
+            
+            # Restore document store and count
+            engine.document_store = state['corpus']
+            
+
             
             return engine
         except Exception as e:

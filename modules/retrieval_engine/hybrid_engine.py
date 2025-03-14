@@ -51,10 +51,9 @@ class HybridRetrievalEngine(BaseRetrievalEngine):
         """
         try:
             # Reset document store
-            self.document_store = []
+            self.document_store = documents
             
             # Store documents
-            self.document_store.extend(documents)
             self.doc_count = len(self.document_store)
             
             # Index documents sequentially

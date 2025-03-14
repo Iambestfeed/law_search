@@ -51,14 +51,9 @@ class DenseRetrievalEngine(BaseRetrievalEngine):
         """
         try:
             # Reset document store and index
-            self.document_store = []
+            self.document_store = documents
             self.index = faiss.IndexFlatIP(self.dimension) if self.metric == "cosine" else faiss.IndexFlatL2(self.dimension)
-            
-            # Store documents for retrieval
-            self.document_store.extend(documents)
-            
-            # Extract content for indexing
-            corpus = [doc['content'] for doc in documents]
+            corpus = documents
             
             # Generate embeddings
             embeddings = self.model.encode(corpus, convert_to_numpy=True)

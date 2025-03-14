@@ -1,4 +1,6 @@
 numpy
+faiss-gpu
+sentence_transformers
 
 # Retrival dependencies
 bm25s
@@ -11,3 +13,6 @@ pathlib>=1.0.1  # For path handling
 # Testing
 pytest>=7.0.0  # For running tests
 pytest-cov>=4.0.0  # For test coverage reports
+
+numpy==1.26.4
+datasets
