@@ -16,7 +16,7 @@ class HybridEvaluationEngine(BaseEvaluationEngine):
                  bm25_weight: float = 0.5,
                  dense_weight: float = 0.5,
                  rrf_k: float = 60.0,
-                 batch_size: int = 32,
+                 dimension: int = 768,
                  trust_remote_code: bool = True):
         """Initialize the hybrid evaluation engine.
         
@@ -31,8 +31,7 @@ class HybridEvaluationEngine(BaseEvaluationEngine):
         # Initialize the HybridRetrievalEngine with dense parameters
         dense_params = {
             'model_name': model_name,
-            'batch_size': batch_size,
-            'trust_remote_code': trust_remote_code
+            'dimension' : dimension
         }
         
         self.retrieval_engine = HybridRetrievalEngine(
@@ -41,7 +40,7 @@ class HybridEvaluationEngine(BaseEvaluationEngine):
             dense_weight=dense_weight,
             rrf_k=rrf_k
         )
-        self.batch_size = batch_size
+        self.batch_size = 32
     
     # Using HybridRetrievalEngine's methods instead of reimplementing them
     
@@ -66,11 +65,7 @@ class HybridEvaluationEngine(BaseEvaluationEngine):
             Dict[str, float]: Dictionary of evaluation metrics and their values.
         """
         # Prepare documents for indexing
-        documents = [{
-            'id': doc_id,
-            'content': text,
-            'metadata': {'id': doc_id}
-        } for doc_id, text in corpus.items()]
+        documents = corpus['text']
         
         # Index documents using the retrieval engine
         print("Indexing documents...")
@@ -81,13 +76,15 @@ class HybridEvaluationEngine(BaseEvaluationEngine):
         results = {f"{m}@{k}": [] for m in metrics for k in top_k_values}
         
         # Evaluate each query
-        query_iter = tqdm(queries.items()) if show_progress else queries.items()
+        query_iter = tqdm(range(len(queries))) if show_progress else range(len(queries))
         print("Evaluating queries...")
-        for query_id, query in query_iter:
+        for qid in query_iter:
+            query = queries[qid]['question']
+            query_id = queries[qid]['query_id']
             # Evaluate at different k values
             for k in top_k_values:
                 # Use the retrieval engine to get top results
-                doc_ids, _ = self.retrieval_engine.search(
+                doc_ids, scores = self.retrieval_engine.search(
                     query=query,
                     top_k=k,
                     bm25_strategy=bm25_strategy
@@ -98,14 +95,17 @@ class HybridEvaluationEngine(BaseEvaluationEngine):
                     doc_ids = doc_ids.tolist()
                 
                 # Calculate relevance scores
-                relevance = [1.0 if doc_id in relevant_docs[query_id] else 0.0
+                # Convert numeric indices to actual document IDs from corpus
+                relevance = [1.0 if corpus[int(doc_id)]['id'] in relevant_docs[query_id] else 0.0
                             for doc_id in doc_ids]
                 
                 # Calculate metrics
                 results[f'ndcg@{k}'].append(self.ndcg_at_k(relevance, k))
                 results[f'mrr@{k}'].append(self.mrr_at_k(relevance, k))
                 
-                retrieved_relevant = set(doc_ids) & relevant_docs[query_id]
+                # Convert numeric indices to actual document IDs for set operations
+                retrieved_doc_ids = [corpus[int(doc_id)]['id'] for doc_id in doc_ids]
+                retrieved_relevant = set(retrieved_doc_ids) & relevant_docs[query_id]
                 num_relevant = len(relevant_docs[query_id])
                 num_retrieved = len(doc_ids)
                 num_retrieved_relevant = len(retrieved_relevant)
