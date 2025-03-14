@@ -1,0 +1,13 @@
+numpy
+
+# Retrival dependencies
+bm25s
+
+# Core dependencies
+PyStemmer>=2.2.0  # For text stemming
+typing>=3.7.4  # For type hints
+pathlib>=1.0.1  # For path handling
+
+# Testing
+pytest>=7.0.0  # For running tests
+pytest-cov>=4.0.0  # For test coverage reports

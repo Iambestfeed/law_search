@@ -1,0 +1,22 @@
+{
+  "language": "english",
+  "k1": 1.5,
+  "b": 0.75,
+  "use_stemmer": false,
+  "use_stopwords": false,
+  "doc_count": 2,
+  "document_store": [
+    {
+      "content": "Điều 1. Vị trí, chức năng của Chính phủ.",
+      "metadata": {
+        "article": 1
+      }
+    },
+    {
+      "content": "Điều 2. Cơ cấu tổ chức và thành viên của Chính phủ.",
+      "metadata": {
+        "article": 2
+      }
+    }
+  ]
+}
