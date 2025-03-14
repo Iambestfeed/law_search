@@ -2,7 +2,6 @@ import os
 import json
 import numpy as np
 from typing import List, Dict, Any, Optional
-from concurrent.futures import ThreadPoolExecutor
 from .base_engine import BaseRetrievalEngine
 from .bm25_engine import BM25RetrievalEngine
 from .dense_engine import DenseRetrievalEngine
@@ -58,36 +57,46 @@ class HybridRetrievalEngine(BaseRetrievalEngine):
             self.document_store.extend(documents)
             self.doc_count = len(self.document_store)
             
-            # Index documents in parallel
-            with ThreadPoolExecutor() as executor:
-                bm25_future = executor.submit(self.bm25_engine.index_documents, documents)
-                dense_future = executor.submit(self.dense_engine.index_documents, documents)
-                
-                # Wait for both indexing operations to complete
-                bm25_success = bm25_future.result()
-                dense_success = dense_future.result()
+            # Index documents sequentially
+            bm25_success = self.bm25_engine.index_documents(documents)
+            dense_success = self.dense_engine.index_documents(documents)
             
             return bm25_success and dense_success
         except Exception as e:
             print(f"Error indexing documents: {str(e)}")
             return False
     
-    def _normalize_scores(self, scores: np.ndarray) -> np.ndarray:
-        """Normalize scores to [0,1] range.
+    def _normalize_scores(self, scores: np.ndarray, method: str = 'minmax') -> np.ndarray:
+        """Normalize scores to [0,1] range using different methods.
         
         Args:
             scores: Raw scores array.
+            method: Normalization method ('minmax', 'softmax', or 'zscore').
             
         Returns:
             numpy.ndarray: Normalized scores.
         """
         if len(scores) == 0:
             return scores
-        score_min = np.min(scores)
-        score_max = np.max(scores)
-        if score_max == score_min:
-            return np.ones_like(scores)
-        return (scores - score_min) / (score_max - score_min)
+            
+        if method == 'softmax':
+            # Softmax normalization
+            exp_scores = np.exp(scores - np.max(scores))  # Subtract max for numerical stability
+            return exp_scores / np.sum(exp_scores)
+        elif method == 'zscore':
+            # Z-score normalization
+            std = np.std(scores)
+            if std == 0:
+                return np.ones_like(scores)
+            mean = np.mean(scores)
+            return (scores - mean) / std
+        else:  # minmax
+            # Min-max normalization
+            score_min = np.min(scores)
+            score_max = np.max(scores)
+            if score_max == score_min:
+                return np.ones_like(scores)
+            return (scores - score_min) / (score_max - score_min)
     
     def _apply_bm25_strategy(self, scores: np.ndarray, strategy: str = 'bm25') -> np.ndarray:
         """Apply different scoring strategies to BM25 scores.
@@ -122,21 +131,31 @@ class HybridRetrievalEngine(BaseRetrievalEngine):
         bm25_doc_ids, bm25_scores = doc_ids_scores[0][1]
         dense_doc_ids, dense_scores = doc_ids_scores[1][1]
         
-        # Apply BM25 strategy and normalize scores
-        bm25_scores = self._normalize_scores(self._apply_bm25_strategy(bm25_scores, bm25_strategy))
-        dense_scores = self._normalize_scores(dense_scores)
+        # Handle empty results
+        if len(bm25_scores) == 0 and len(dense_scores) == 0:
+            return np.array([]), np.array([])
+        elif len(bm25_scores) == 0:
+            return np.array(dense_doc_ids), self._normalize_scores(dense_scores, 'softmax')
+        elif len(dense_scores) == 0:
+            return np.array(bm25_doc_ids), self._normalize_scores(self._apply_bm25_strategy(bm25_scores, bm25_strategy), 'softmax')
+        
+        # Apply BM25 strategy and normalize scores using softmax for better score distribution
+        bm25_scores = self._normalize_scores(self._apply_bm25_strategy(bm25_scores, bm25_strategy), 'softmax')
+        dense_scores = self._normalize_scores(dense_scores, 'softmax')
         
         # Get ranks (1-based)
         bm25_ranks = np.argsort(-bm25_scores).argsort() + 1
         dense_ranks = np.argsort(-dense_scores).argsort() + 1
         
-        # Compute RRF scores
+        # Compute RRF scores with adaptive k
         rrf_scores = {}
+        adaptive_k = self.rrf_k * np.sqrt(max(len(bm25_ranks), len(dense_ranks)))  # Scale k with result size
+        
         for i, doc_id in enumerate(bm25_doc_ids):
-            rrf_scores[doc_id] = self.bm25_weight / (self.rrf_k + bm25_ranks[i])
+            rrf_scores[doc_id] = self.bm25_weight / (adaptive_k + bm25_ranks[i])
             
         for i, doc_id in enumerate(dense_doc_ids):
-            dense_score = self.dense_weight / (self.rrf_k + dense_ranks[i])
+            dense_score = self.dense_weight / (adaptive_k + dense_ranks[i])
             if doc_id in rrf_scores:
                 rrf_scores[doc_id] += dense_score
             else:
