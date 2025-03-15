@@ -1,0 +1,16 @@
+{
+    "bm25_weight": 0.5,
+    "dense_weight": 0.5,
+    "rrf_k": 60.0,
+    "batch_size": 32,
+    "dimension": 768,
+    "dataset_name_base": "another-symato/VMTEB-Zalo-legel-retrieval",
+    "num_corpus_addition": 10000,
+    "models": {
+        "hiieu/halong_embedding": {
+            "model_name": "hiieu/halong_embedding",
+            "word_segment": false
+        }
+    },
+    "output_dir": "output/halong_hybrid_scores.json"
+}

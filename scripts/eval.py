@@ -27,6 +27,7 @@ dimension = config.get("dimension", 768)
 models = config.get("models", {})
 dataset_name_base = config.get("dataset_name_base", "another-symato/VMTEB-Zalo-legel-retrieval")
 num_corpus_addition = config.get("num_corpus_addition", 10000)
+output_dir = config.get("output_dir", "output/scores.json")
 
 eval_results = {}
 
@@ -72,4 +73,4 @@ for model_key, model_config in models.items():
 
 # Create score board
 df_score_board = pd.DataFrame(eval_results)
-df_score_board.to_json('output/scores.json')
+df_score_board.to_json(output_dir)
