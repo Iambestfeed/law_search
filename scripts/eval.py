@@ -65,7 +65,8 @@ for model_key, model_config in models.items():
         bm25_weight=bm25_weight,
         dense_weight=dense_weight,
         rrf_k=rrf_k,
-        dimension=dimension
+        dimension=dimension, 
+        batch_size = batch_size
     )
     
     # Run evaluation

@@ -16,7 +16,8 @@ class DenseRetrievalEngine(BaseRetrievalEngine):
     
     def __init__(self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
                  dimension: int = 384,
-                 metric: str = "cosine"):
+                 metric: str = "cosine", 
+                 batch_size: int = 32):
         """Initialize the dense retrieval engine.
         
         Args:
@@ -39,6 +40,7 @@ class DenseRetrievalEngine(BaseRetrievalEngine):
             
         self.document_store = []
         self.doc_count = 0
+        self.batch_size = batch_size
     
     def index_documents(self, documents: List[Dict[str, Any]]) -> bool:
         """Index a list of documents.
@@ -56,7 +58,7 @@ class DenseRetrievalEngine(BaseRetrievalEngine):
             corpus = documents
             
             # Generate embeddings
-            embeddings = self.model.encode(corpus, convert_to_numpy=True)
+            embeddings = self.model.encode(corpus, convert_to_numpy=True, batch_size = self.batch_size, show_process_bar = True)
             
             # Normalize embeddings if using cosine similarity
             if self.metric == "cosine":

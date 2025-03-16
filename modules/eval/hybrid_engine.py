@@ -17,7 +17,8 @@ class HybridEvaluationEngine(BaseEvaluationEngine):
                  dense_weight: float = 0.5,
                  rrf_k: float = 60.0,
                  dimension: int = 768,
-                 trust_remote_code: bool = True):
+                 trust_remote_code: bool = True, 
+                 batch_size: int = 32):
         """Initialize the hybrid evaluation engine.
         
         Args:
@@ -31,7 +32,8 @@ class HybridEvaluationEngine(BaseEvaluationEngine):
         # Initialize the HybridRetrievalEngine with dense parameters
         dense_params = {
             'model_name': model_name,
-            'dimension' : dimension
+            'dimension' : dimension,
+            'batch_size' : batch_size
         }
         
         self.retrieval_engine = HybridRetrievalEngine(
@@ -40,7 +42,6 @@ class HybridEvaluationEngine(BaseEvaluationEngine):
             dense_weight=dense_weight,
             rrf_k=rrf_k
         )
-        self.batch_size = 32
     
     # Using HybridRetrievalEngine's methods instead of reimplementing them
     

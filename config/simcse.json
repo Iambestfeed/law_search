@@ -1,0 +1,16 @@
+{
+    "bm25_weight": 0,
+    "dense_weight": 1,
+    "rrf_k": 60.0,
+    "batch_size": 32,
+    "dimension": 768,
+    "dataset_name_base": "another-symato/VMTEB-Zalo-legel-retrieval",
+    "num_corpus_addition": 10000,
+    "models": {
+        "VoVanPhuc/sup-SimCSE-VietNamese-phobert-base": {
+            "model_name": "VoVanPhuc/sup-SimCSE-VietNamese-phobert-base",
+            "word_segment": true
+        }
+    },
+    "output_dir": "output/simcse_scores.json"
+}
