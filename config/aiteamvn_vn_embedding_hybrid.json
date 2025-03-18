@@ -1,16 +1,16 @@
 {
-    "bm25_weight": 0,
-    "dense_weight": 1,
+    "bm25_weight": 0.5,
+    "dense_weight": 0.5,
     "rrf_k": 60.0,
     "batch_size": 4,
     "dimension": 1024,
     "dataset_name_base": "another-symato/VMTEB-Zalo-legel-retrieval",
     "num_corpus_addition": 10000,
     "models": {
-        "BAAI/bge-m3": {
-            "model_name": "BAAI/bge-m3",
+        "AITeamVN/Vietnamese_Embedding": {
+            "model_name": "AITeamVN/Vietnamese_Embedding",
             "word_segment": false
         }
     },
-    "output_dir": "output/bge_m3_scores.json"
+    "output_dir": "output/AITeamVN_Vietnamese_Embedding_hybrid.json"
 }

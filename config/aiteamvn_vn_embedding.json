@@ -7,10 +7,10 @@
     "dataset_name_base": "another-symato/VMTEB-Zalo-legel-retrieval",
     "num_corpus_addition": 10000,
     "models": {
-        "BAAI/bge-m3": {
-            "model_name": "BAAI/bge-m3",
+        "AITeamVN/Vietnamese_Embedding": {
+            "model_name": "AITeamVN/Vietnamese_Embedding",
             "word_segment": false
         }
     },
-    "output_dir": "output/bge_m3_scores.json"
+    "output_dir": "output/AITeamVN_Vietnamese_Embedding.json"
 }

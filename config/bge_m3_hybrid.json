@@ -3,7 +3,7 @@
     "dense_weight": 0.5,
     "rrf_k": 60.0,
     "batch_size": 4,
-    "dimension": 768,
+    "dimension": 1024,
     "dataset_name_base": "another-symato/VMTEB-Zalo-legel-retrieval",
     "num_corpus_addition": 10000,
     "models": {
