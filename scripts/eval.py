@@ -8,7 +8,7 @@ import random
 import numpy as np
 import pandas as pd
 from datasets import load_dataset
-from modules.eval.hybrid_engine import HybridEvaluationEngine
+from modules.eval.retrieval.hybrid_engine import HybridEvaluationEngine
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="Hybrid Retrieval Evaluation")
