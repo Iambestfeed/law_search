@@ -31,6 +31,8 @@ class DenseRetrievalEngine(BaseRetrievalEngine):
         
         # Initialize sentence transformer model
         self.model = SentenceTransformer(model_name, token=False)
+        if self.model_name == "vinai/phobert-base-v2":
+            self.model.max_seq_length = 256
         
         # Initialize FAISS index
         if metric == "cosine":
@@ -58,7 +60,7 @@ class DenseRetrievalEngine(BaseRetrievalEngine):
             corpus = documents
             
             # Generate embeddings
-            embeddings = self.model.encode(corpus, convert_to_numpy=True, batch_size = self.batch_size, show_process_bar = True)
+            embeddings = self.model.encode(corpus, convert_to_numpy=True, batch_size = self.batch_size)
             
             # Normalize embeddings if using cosine similarity
             if self.metric == "cosine":
@@ -98,7 +100,7 @@ class DenseRetrievalEngine(BaseRetrievalEngine):
                 return [], []
             
             # Generate query embedding
-            query_embedding = self.model.encode([query], convert_to_numpy=True)
+            query_embedding = self.model.encode([query], convert_to_numpy=True, show_progress_bar=False)
             
             # Normalize query embedding if using cosine similarity
             if self.metric == "cosine":
